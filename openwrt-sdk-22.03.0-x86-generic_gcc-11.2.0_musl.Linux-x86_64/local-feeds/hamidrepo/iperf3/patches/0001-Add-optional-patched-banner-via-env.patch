@@ -1,0 +1,29 @@
+Index: iperf-3.11/src/main.c
+===================================================================
+--- iperf-3.11.orig/src/main.c
++++ iperf-3.11/src/main.c
+@@ -42,6 +42,8 @@
+ #include <arpa/inet.h>
+ #include <netdb.h>
+
++#include <stdlib.h>
++#include <stdio.h>
+ #include "iperf.h"
+ #include "iperf_api.h"
+ #include "iperf_util.h"
+@@ -59,6 +61,15 @@ main(int argc, char **argv)
+ {
+     struct iperf_test *test;
+
++    /* Simple runtime toggle to verify a patched build is running.
++     * Export IPERF3_PATCH_BANNER=1 to enable. */
++    const char *banner = getenv("IPERF3_PATCH_BANNER");
++    if (banner && *banner && *banner != '0') {
++        fprintf(stderr,
++            "iperf3: [patched] banner enabled via IPERF3_PATCH_BANNER\n");
++        /* keep it on stderr so it doesn't break JSON output, etc. */
++    }
++
+     // XXX: Setting the process affinity requires root on most systems.
+     //      Is this a feature we really need?
+ #ifdef TEST_PROC_AFFINITY
