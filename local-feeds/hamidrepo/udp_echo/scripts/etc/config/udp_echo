@@ -1,0 +1,10 @@
+# UCI config for udp_echo
+# One 'service' section named 'main' drives the daemon.
+# Use `uci show udp_echo` and `uci set` to change, then `/etc/init.d/udp-echo restart`.
+
+config service main
+        option enabled '1'        # 1=start at boot (defaults script also enables the service)
+        option listen_addr '0.0.0.0'  # Address to bind (IPv4)
+        option port '9000'        # UDP port
+        option bufsize '2048'     # Receive buffer (bytes)
+        option timestamp '0'      # 1 = prefix replies with UTC timestamp (requires -t support)
