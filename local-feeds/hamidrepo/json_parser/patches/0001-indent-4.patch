@@ -1,0 +1,13 @@
+Index: json_parser-1.0/src/main.cpp
+===================================================================
+--- json_parser-1.0.orig/src/main.cpp
++++ json_parser-1.0/src/main.cpp
+@@ -12,7 +12,7 @@ int main(int argc, char **argv)
+   {
+     JSON_PARSER p;
+     auto j = p.parse_file(argv[1]);
+-    std::cout << j.dump(2) << std::endl;
++    std::cout << j.dump(4) << std::endl;
+     return 0;
+   }
+   catch (const std::exception &e)
