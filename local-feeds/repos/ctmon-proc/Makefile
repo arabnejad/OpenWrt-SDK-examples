@@ -15,8 +15,8 @@ include $(INCLUDE_DIR)/package.mk
 
 #-------------------------- opkg-visible information --------------------------
 define Package/$(PKG_NAME)
-  SECTION:=net
-  CATEGORY:=Network
+  SECTION:=local
+  CATEGORY:=local-feed pkgs
   TITLE:=Minimal conntrack monitor via /proc (no deps)
   DEPENDS:=+libc
 endef

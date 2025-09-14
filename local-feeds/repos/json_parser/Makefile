@@ -9,8 +9,8 @@ PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 include $(INCLUDE_DIR)/package.mk
 
 define Package/$(PKG_NAME)
-  SECTION:=utils
-  CATEGORY:=Utilities
+  SECTION:=local
+  CATEGORY:=local-feed pkgs
   TITLE:=C++ JSON parser demo (nlohmann/json)
   DEPENDS:=+libstdcpp   # keep only the runtime C++ stdlib
 endef

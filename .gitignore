@@ -1,0 +1,8 @@
+
+.vscode/
+
+openwrt-sdk*/
+openwrt-sdk*.tar.xz
+openwrt-sdk*.gz
+*.img
+.ccache/

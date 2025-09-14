@@ -9,7 +9,7 @@ apply a **quilt-style patch**, rebuild it in the OpenWrt **SDK**, and verify the
 
 ## 1) What you’ll build
 
-- A local feed package `hamidrepo/iperf3/` that **shadows** the default `feeds/packages/net/iperf3`.
+- A local feed package `local_feeds/repos/iperf3/` that **shadows** the default `feeds/packages/net/iperf3`.
 - A small patch that **prints a banner** when `IPERF3_PATCH_BANNER=1` is set (proof the patched binary runs).
 - Rebuild **only** this package and produce a `.ipk`.
 - Install and **verify** inside the QEMU OpenWrt VM.
@@ -21,7 +21,7 @@ apply a **quilt-style patch**, rebuild it in the OpenWrt **SDK**, and verify the
 Your feed directory (absolute path is recommended in `feeds.conf` via `src-link`):
 
 ```
-/openwrt-sdk/local-feeds/hamidrepo/
+/work/local-feeds/repos/
 └── iperf3/
     ├── Makefile
     ├── patches/
@@ -60,7 +60,7 @@ Create `patches/0001-Add-optional-patched-banner-via-env.patch` with the followi
 +    }
 ```
 
-Place the finished patch under `local-feeds/hamidrepo/iperf3/patches/`.
+Place the finished patch under `local-feeds/local_feeds/repos/iperf3/patches/`.
 
 ---
 
@@ -69,17 +69,15 @@ Place the finished patch under `local-feeds/hamidrepo/iperf3/patches/`.
 Ensure `feeds.conf` uses an **absolute** path for your local feed (prevents empty indices/symlink issues):
 
 ```
-src-link hamidrepo /openwrt-sdk/local-feeds/hamidrepo
+src-link local_feeds /work/local-feeds/repos/
 ```
 
 Update and force-install the local override:
 ```bash
 cd /openwrt-sdk
-./scripts/feeds update -f hamidrepo
-./scripts/feeds install -f -p hamidrepo iperf3
+./scripts/feeds update -f local_feeds
+./scripts/feeds install -f -p local_feeds iperf3
 ```
-
-This will create the build-tree link: `package/feeds/hamidrepo/iperf3 -> /openwrt-sdk/local-feeds/hamidrepo/iperf3`.
 
 ---
 
@@ -90,12 +88,12 @@ This will create the build-tree link: `package/feeds/hamidrepo/iperf3 -> /openwr
 cd /openwrt-sdk
 
 # Clean + compile only this package
-make package/feeds/hamidrepo/iperf3/{clean,compile} V=s -j"$(nproc)"
+make package/feeds/local_feeds/iperf3/{clean,prepare,compile} V=s -j"$(nproc)"
 ```
 
 Artifacts appear under:
 ```
-./bin/packages/<arch>/hamidrepo/iperf3_*.ipk
+./bin/packages/<arch>/local_feeds/iperf3_*.ipk
 ```
 (For x86/generic 32-bit SDK, `<arch>` is typically `i386_pentium4`. For x86/64 SDK it’s `x86_64`.)
 
@@ -106,7 +104,7 @@ Artifacts appear under:
 Copy the ipk (Dropbear prefers legacy scp protocol, hence `-O`):
 ```bash
 # From host
-scp -O -P 2222 ./bin/packages/*/hamidrepo/iperf3_*.ipk root@127.0.0.1:/tmp/
+scp -O -P 2222 ./bin/packages/*/local_feeds/iperf3_*.ipk root@127.0.0.1:/tmp/
 ```
 
 Install and run (inside the VM):
@@ -138,13 +136,13 @@ Sometimes it’s easier to create/refresh patches from the **build tree** after 
 
 ```bash
 # 1) Prepare iperf3 so sources are unpacked under build_dir
-make package/feeds/hamidrepo/iperf3/prepare V=s
+make package/feeds/local_feeds/iperf3/prepare V=s
 
 # 2) Enter the build dir (adjust the actual versioned path)
 cd build_dir/target-*/iperf-*/
 
 # 3) Tell quilt to store patches back into your local feed
-export QUILT_PATCHES="/openwrt-sdk/local-feeds/hamidrepo/iperf3/patches"
+export QUILT_PATCHES="/work/local-feeds/repos/iperf3/patches"
 
 # 4) Start a new patch and add the file you’ll edit
 quilt new 0001-Add-optional-patched-banner-via-env.patch
@@ -155,10 +153,10 @@ quilt refresh
 
 # 6) Rebuild the package
 cd /openwrt-sdk
-make package/feeds/hamidrepo/iperf3/{clean,compile} V=s -j"$(nproc)"
+make package/feeds/local_feeds/iperf3/{clean,prepare,compile} V=s -j"$(nproc)"
 ```
 
-Your refreshed patch will live in `local-feeds/hamidrepo/iperf3/patches/` and be applied on each build.
+Your refreshed patch will live in `local-feeds/local_feeds/iperf3/patches/` and be applied on each build.
 
 ---
 

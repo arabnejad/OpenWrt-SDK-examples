@@ -28,8 +28,8 @@ include $(INCLUDE_DIR)/package.mk
 DISABLE_NLS:=
 
 define Package/iperf3/default
-  SECTION:=net
-  CATEGORY:=Network
+  SECTION:=local
+  CATEGORY:=local-feed pkgs
   TITLE:=Internet Protocol bandwidth measuring tool
   URL:=https://github.com/esnet/iperf
 endef

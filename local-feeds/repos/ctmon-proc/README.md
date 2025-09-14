@@ -14,10 +14,10 @@ From the SDK root (`/openwrt-sdk` inside the container):
 
 ```sh
 # Re-index just the feed
-./scripts/feeds update -f hamidrepo
+./scripts/feeds update -f local_feeds
 
 # Verify the package is visible in the feed index
-./scripts/feeds list hamidrepo | grep -E '^ctmon-proc\b' || echo "ctmon-proc not indexed"
+./scripts/feeds list local_feeds | grep -E '^ctmon-proc\b' || echo "ctmon-proc not indexed"
 ```
 
 ---
@@ -31,20 +31,20 @@ copied.
 ### Recommended (reliable)
 
 ```sh
-make package/feeds/hamidrepo/ctmon-proc/{clean,prepare,compile} V=s -j1
+make package/feeds/local_feeds/ctmon-proc/{clean,prepare,compile} V=s -j1
 ```
 
 ### Alternative: remove the prepare stamp
 
 ```sh
 rm -f build_dir/target-*/ctmon-proc-1.0/.prepared_*
-make package/feeds/hamidrepo/ctmon-proc/compile V=s -j1
+make package/feeds/local_feeds/ctmon-proc/compile V=s -j1
 ```
 
 If the build succeeds, there should be an ipk like:
 
 ```
-bin/packages/i386_pentium4/hamidrepo/ctmon-proc_1.0-1_i386_pentium4.ipk
+bin/packages/i386_pentium4/local_feeds/ctmon-proc_1.0-1_i386_pentium4.ipk
 ```
 
 > (Exact arch path depends on the SDK target.)
@@ -57,7 +57,7 @@ Assuming the QEMU forwards SSH on host port **2222** (→ guest 22):
 
 ```sh
 # From the host
-scp -P 2222 bin/packages/*/hamidrepo/ctmon-proc_1.0-1_*.ipk root@127.0.0.1:/tmp/
+scp -P 2222 bin/packages/*/local_feeds/ctmon-proc_1.0-1_*.ipk root@127.0.0.1:/tmp/
 
 # Inside the VM
 opkg update

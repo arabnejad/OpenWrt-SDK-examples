@@ -25,23 +25,22 @@ From the **SDK root**:
 
 ```bash
 # Ensure your local feed is wired up in feeds.conf, e.g.:
-# src-link hamidrepo /absolute/path/to/local-feeds/hamidrepo
+# src-link local_feeds /work/local-feeds/repos/
 
 # 1) Update feeds (your local feed + packages feed for nlohmannjson)
-./scripts/feeds update -f hamidrepo packages
+./scripts/feeds update -f local_feeds packages
 
 # 2) Install build dependencies and your package metadata
 ./scripts/feeds install -f -p packages nlohmannjson
-./scripts/feeds install -f -p hamidrepo json_parser
+./scripts/feeds install -f -p local_feeds json_parser
 
 # 3) Clean + build only this package
-make package/feeds/hamidrepo/json_parser/clean V=s
-make package/feeds/hamidrepo/json_parser/compile V=s -j"$(nproc)"
+make package/feeds/local_feeds/json_parser/{clean,prepare,compile} V=s  -j"$(nproc)"
 ```
 
 Artifacts (example for 22.03 **i386_pentium4** SDK):
 ```
-./bin/packages/i386_pentium4/hamidrepo/json_parser_1.0-1_i386_pentium4.ipk
+./bin/packages/i386_pentium4/local_feeds/json_parser_1.0-1_i386_pentium4.ipk
 # (optional) If your SDK emits an nlohmannjson .ipk, it may be under:
 ./bin/packages/i386_pentium4/packages/nlohmannjson_*.ipk
 ```
@@ -58,7 +57,7 @@ From your **host** (Ubuntu), assuming SSH is forwarded on **2222**:
 ```bash
 # Dropbear on OpenWrt often needs legacy SCP protocol: add -O
 # Copy json_parser (and nlohmannjson if it exists)
-scp -O -P 2222 ./bin/packages/i386_pentium4/hamidrepo/json_parser_*.ipk root@127.0.0.1:/tmp/
+scp -O -P 2222 ./bin/packages/i386_pentium4/local_feeds/json_parser_*.ipk root@127.0.0.1:/tmp/
 # If you have an nlohmannjson ipk:
 # scp -O -P 2222 ./bin/packages/i386_pentium4/packages/nlohmannjson_*.ipk root@127.0.0.1:/tmp/
 ```
@@ -108,32 +107,11 @@ Expected output (pretty-printed):
 
 ---
 
-## 5) Typical layout of the package (reference)
-
-```
-local-feeds/hamidrepo/json_parser/
-├── Makefile                 # OpenWrt package recipe
-├── include/
-│   └── json_parser.h        # Class header
-├── src/
-│   ├── json_parser.cpp      # Class implementation (uses nlohmann::json)
-│   └── main.cpp             # CLI entry (parses argv, prints JSON)
-└── patches/                 # quilt patches (0001-*.patch, ...)
-```
-
-Makefile highlights:
-- Uses **C++11** (`-std=gnu++11`).
-- Copies **all** files under `src/` and `include/` into the build dir.
-- Compiles all `src/*.cpp` into `/usr/bin/json_parser`.
-- `DEPENDS` typically includes `+libstdcpp` and (optionally) `+nlohmannjson`.
-
----
-
-## 6) Troubleshooting
+## 5) Troubleshooting
 
 - **Arch mismatch on install**: ensure the `.ipk` arch matches the VM (e.g., `i386_pentium4` vs `x86_64`).
 - **`libstdc++.so.6` missing at runtime**: `opkg update && opkg install libstdcpp`.
-- **Changing sources doesn’t rebuild**: run `make package/feeds/hamidrepo/json_parser/{clean,compile} V=s`.
+- **Changing sources doesn’t rebuild**: run `make package/feeds/local_feeds/json_parser/{clean,compile} V=s`.
 - **Patches**: put `0001-...patch` under `patches/` and rebuild, or use quilt in `build_dir/.../json_parser-1.0` (`QUILT_PATCHES=$(CURDIR)/patches quilt push -a`).
 
 ---
@@ -142,8 +120,8 @@ Makefile highlights:
 
 ```bash
 # From SDK root – rebuild just this package
-make package/feeds/hamidrepo/json_parser/{clean,compile} V=s -j"$(nproc)"
+make package/feeds/local_feeds/json_parser/{clean,compile} V=s -j"$(nproc)"
 
 # Inspect the produced ipk
-tar -tf ./bin/packages/*/hamidrepo/json_parser_*.ipk
+tar -tf ./bin/packages/*/local_feeds/json_parser_*.ipk
 ```

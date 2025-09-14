@@ -20,6 +20,9 @@ It captures the **exact versions** and steps used in this setup (OpenWrt **22.03
 
 ### 1.3 Prepare the image
 ```bash
+# extract OpenWrt SDK tar file
+tar -xf openwrt-sdk-22.03.0-x86-generic_gcc-11.2.0_musl.Linux-x86_64.tar.xz
+# extract OpenWrt VM disk image and rename it
 gunzip openwrt-22.03.0-x86-generic-generic-ext4-combined.img.gz
 mv openwrt-22.03.0-x86-generic-generic-ext4-combined.img openwrt_86.img
 
@@ -35,6 +38,7 @@ Example project layout:
 ├── openwrt-sdk-22.03.0-x86-generic_gcc-11.2.0_musl.Linux-x86_64/
 ├── openwrt_86.img
 ├── Dockerfile
+├── local-feeds/
 ├── bashrc_extra.sh
 ├── run.sh
 └── qemu_start.sh
@@ -82,7 +86,6 @@ docker build -t openwrt-sdk:22.03 .
 Inside the container:
 ```bash
 echo "$STAGING_DIR"    # should be set by the SDK
-command -v i486-openwrt-linux-musl-gcc || true
 echo "$PATH"           # should include staging_dir/host/bin and toolchain bins
 ```
 
@@ -144,44 +147,65 @@ Using **absolute** paths avoids empty indices or odd symlinks inside `package/fe
 
 Inside the container under `/openwrt-sdk`:
 ```bash
-# Let's assume your local feed lives here:
-#   /openwrt-sdk/local-feeds/hamidrepo
-# and you copied feeds.conf into /openwrt-sdk
+# your local feed lives here:
+#   /work/local-feeds/
 
 # Update the feed and index it
-./scripts/feeds update -f hamidrepo
+./scripts/feeds update -f local_feeds
+# Find and install all packages from local_feeds
+./scripts/feeds install -a -p local_feeds
 ```
 
-Install package stubs from your feed (this creates `package/feeds/<feed>/<pkg>` symlinks):
+Install package stubs from your feed (this creates `package/feeds/`[feed]`/`[pkg]`` symlinks):
 ```bash
-./scripts/feeds install -p hamidrepo <pkg>
+./scripts/feeds install -p local_feeds `[pkg]`
 ```
 
 > If you see “Not overriding core package ‘X’”, add `-f` to force for your own packages:
-> `./scripts/feeds install -f -p hamidrepo <pkg>`
+> `./scripts/feeds install -f -p local_feeds `[pkg]``
 
 ---
 
 ## 6) Build only what you need
 
+Before building any package, make sure you arelady ran `make menuconfig`, so `.config` file shoudl be exists
+when you run  `make menuconfig`, you should be able to see a new `local-feed pkgs` sub-menu at top level, all packages in `repos` dir will be listead there
+```bashe
+    Global build settings  --->
+    Advanced configuration options (for developers)  --->
+[*] Image configuration  ----
+    Base system  --->
+    Kernel modules  --->
+    Libraries  ----
+    local-feed pkgs  --->
+    Utilities  ----
+```
+
+Please make sure, you force Category/Section in the package `Makefile` to
+```bash
+  CATEGORY:=local-feed pkgs
+  SECTION:=local
+```
+
+
 General form:
 ```bash
-make package/feeds/<feed>/<pkg>/{clean,compile} V=s -j"$(nproc)"
+make package/feeds/local_feeds/`[pkg]`/{clean,prepare,compile} V=s -j"$(nproc)"
 ```
 
 Examples:
 ```bash
 # Discover packages
-./scripts/feeds list hamidrepo | grep -i <pkg>
+./scripts/feeds list local_feeds | grep -i `[pkg]`
 
 # Build example package
-./scripts/feeds install -p hamidrepo myapp
-make package/feeds/hamidrepo/myapp/{clean,compile} V=s -j"$(nproc)"
+./scripts/feeds install -p local_feeds myapp
+make package/feeds/local_feeds/myapp/{clean,prepare,compile} V=s -j"$(nproc)"
 ```
 
 Artifacts land in:
 ```
-./bin/packages/<arch>/<feed>/<pkg>_*.ipk
+./bin/packages/`[arch]`/`[feed]`/`[pkg]`_*.ipk
 ```
 Common arch values for x86 targets:
 - `i386_pentium4` → x86 **generic** 32‑bit
@@ -196,13 +220,13 @@ Common arch values for x86 targets:
 **Dropbear** prefers legacy scp protocol; use `-O`:
 ```bash
 # From the host
-scp -O -P 2222 ./bin/packages/*/*/<yourpkg>_*.ipk root@127.0.0.1:/tmp/
+scp -O -P 2222 ./bin/packages/*/*/`[yourpkg]`_*.ipk root@127.0.0.1:/tmp/
 ```
 
 Inside the VM:
 ```sh
 opkg update || true
-opkg install /tmp/<yourpkg>_*.ipk
+opkg install /tmp/`[yourpkg]`_*.ipk
 ```
 
 ---
@@ -215,7 +239,7 @@ Two ways to integrate patches:
 Place patches under the package’s `patches/` directory (alongside the package `Makefile`). They are applied automatically during `Build/Prepare` via `$(Build/Patch)`.
 
 ```
-local-feeds/hamidrepo/<pkg>/
+local-feeds/repos/`[pkg]`/
 ├── Makefile
 ├── patches/
 │   ├── 0001-...
@@ -227,7 +251,7 @@ local-feeds/hamidrepo/<pkg>/
 ### 8.2 Interactive in the build tree
 After a first compile, go to:
 ```
-build_dir/target-*/<pkg>-<ver>/
+build_dir/target-*/`[pkg]`-`[ver]`/
 ```
 
 Run quilt with a known patch store:
@@ -241,7 +265,7 @@ quilt refresh
 
 Rebuild:
 ```bash
-make package/feeds/<feed>/<pkg>/{clean,compile} V=s -j"$(nproc)"
+make package/feeds/`[feed]`/`[pkg]`/{clean,compile} V=s -j"$(nproc)"
 ```
 
 > If the SDK ships a wrapper quilt with minimal `--help`, call the system `/usr/bin/quilt` (on your host) to prepare patches, then drop them into your package’s `patches/` directory.
@@ -253,11 +277,11 @@ make package/feeds/<feed>/<pkg>/{clean,compile} V=s -j"$(nproc)"
 - **Empty `feeds/*.index` after `feeds update`**
   Ensure `feeds.conf` uses an **absolute** path for `src-link`:
   ```
-  src-link hamidrepo /openwrt-sdk/local-feeds/hamidrepo
+  src-link local_feeds /work/local-feeds/repos/
   ```
 
-- **`No rule to make target 'package/feeds/.../<pkg>/compile'`**
-  You forgot `./scripts/feeds install -p <feed> <pkg>` (creates the symlink under `package/feeds/<feed>/<pkg>`).
+- **`No rule to make target 'package/feeds/.../`[pkg]`/compile'`**
+  You forgot `./scripts/feeds install -p `[feed]` `[pkg]`` (creates the symlink under `package/feeds/`[feed]`/`[pkg]``).
 
 - **BusyBox `nc` lacks options**
   Use **OpenBSD netcat** on your host; inside the VM prefer `socat` for UDP tests.
