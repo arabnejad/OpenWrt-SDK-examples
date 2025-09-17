@@ -1,0 +1,16 @@
+
+CXX ?= g++
+CXXFLAGS ?= -std=c++11 -Os -Wall -Wextra -Werror -Iinclude
+LDFLAGS ?=
+
+BIN := cpplogtool
+SRC := $(wildcard src/*.cpp)
+
+all: $(BIN)
+$(BIN): $(SRC)
+	$(CXX) $(CXXFLAGS) -o $@ $(SRC) $(LDFLAGS)
+
+clean:
+	rm -f $(BIN)
+
+.PHONY: all clean

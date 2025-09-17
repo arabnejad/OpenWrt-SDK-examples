@@ -1,0 +1,17 @@
+
+CC ?= gcc
+CFLAGS ?= -std=c11 -Os -Wall -Wextra -Werror
+LDFLAGS ?=
+
+BIN := clogtool
+SRC := $(wildcard src/*.c)
+INC := -Iinclude
+
+all: $(BIN)
+$(BIN): $(SRC)
+	$(CC) $(CFLAGS) $(INC) -o $@ $(SRC) $(LDFLAGS)
+
+clean:
+	rm -f $(BIN)
+
+.PHONY: all clean
